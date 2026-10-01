@@ -1,4 +1,5 @@
 export const STORAGE_KEY = "mis4173-equipment-requests";
+export const PRIORITIES = ["Low", "Medium", "High"];
 
 export class RequestValidationError extends Error {
   constructor(errors) {
@@ -19,6 +20,7 @@ export function validateRequest(input = {}) {
   if (!clean(input.department)) errors.department = "Select a department.";
   if (!clean(input.equipment)) errors.equipment = "Enter the equipment needed.";
   if (!clean(input.neededBy)) errors.neededBy = "Select the date needed.";
+  if (!PRIORITIES.includes(clean(input.priority))) errors.priority = "Select a priority.";
   if (!clean(input.reason)) errors.reason = "Enter a business reason.";
 
   return errors;
@@ -43,6 +45,7 @@ export function createRequest(input, options = {}) {
     department: clean(input.department),
     equipment: clean(input.equipment),
     neededBy: clean(input.neededBy),
+    priority: clean(input.priority),
     reason: clean(input.reason),
     createdAt: now.toISOString(),
   };
@@ -80,6 +83,8 @@ function isRequestRecord(value) {
     typeof value.department === "string" &&
     typeof value.equipment === "string" &&
     typeof value.neededBy === "string" &&
+    (value.priority === undefined ||
+      (typeof value.priority === "string" && PRIORITIES.includes(value.priority))) &&
     typeof value.reason === "string" &&
     typeof value.createdAt === "string"
   );
