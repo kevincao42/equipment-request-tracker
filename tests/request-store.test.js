@@ -6,6 +6,7 @@ import {
   STORAGE_KEY,
   appendRequest,
   createRequest,
+  filterRequests,
   loadRequests,
   saveRequests,
 } from "../src/request-store.js";
@@ -79,6 +80,21 @@ test("appendRequest returns a new list with the newest request first", () => {
   assert.deepEqual(original.map((request) => request.id), ["old"]);
 });
 
+test("filterRequests returns all requests or exact priority matches", () => {
+  const requests = [
+    { id: "high", priority: "High" },
+    { id: "normal", priority: "Normal" },
+    { id: "low", priority: "Low" },
+    { id: "missing" },
+    { id: "unknown", priority: "Urgent" },
+  ];
+
+  assert.deepEqual(filterRequests(requests, "All"), requests);
+  assert.deepEqual(filterRequests(requests, "High"), [requests[0]]);
+  assert.deepEqual(filterRequests(requests, "Normal"), [requests[1]]);
+  assert.deepEqual(filterRequests(requests, "Low"), [requests[2]]);
+});
+
 test("saveRequests and loadRequests round-trip valid records", () => {
   const storage = new MemoryStorage();
   const request = createRequest(validInput, {
@@ -91,7 +107,7 @@ test("saveRequests and loadRequests round-trip valid records", () => {
   assert.deepEqual(loadRequests(storage), [request]);
 });
 
-test("loadRequests preserves records created before priority was added", () => {
+test("loadRequests preserves records with missing or unrecognized priorities", () => {
   const storage = new MemoryStorage();
   const legacyRequest = {
     id: "request-legacy",
@@ -102,9 +118,17 @@ test("loadRequests preserves records created before priority was added", () => {
     reason: "Replace a failed field computer.",
     createdAt: "2026-08-17T12:00:00.000Z",
   };
-  storage.setItem(STORAGE_KEY, JSON.stringify([legacyRequest]));
+  const unrecognizedPriorityRequest = {
+    ...legacyRequest,
+    id: "request-unrecognized-priority",
+    priority: "Urgent",
+  };
+  storage.setItem(
+    STORAGE_KEY,
+    JSON.stringify([legacyRequest, unrecognizedPriorityRequest]),
+  );
 
-  assert.deepEqual(loadRequests(storage), [legacyRequest]);
+  assert.deepEqual(loadRequests(storage), [legacyRequest, unrecognizedPriorityRequest]);
 });
 
 test("loadRequests safely handles damaged stored data", () => {

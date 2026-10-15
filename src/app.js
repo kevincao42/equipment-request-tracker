@@ -2,6 +2,7 @@ import {
   RequestValidationError,
   appendRequest,
   createRequest,
+  filterRequests,
   loadRequests,
   saveRequests,
 } from "./request-store.js";
@@ -11,13 +12,21 @@ const message = document.querySelector("#form-message");
 const neededByInput = document.querySelector("#needed-by");
 const count = document.querySelector("#request-count");
 const emptyState = document.querySelector("#empty-state");
+const filteredEmptyState = document.querySelector("#filtered-empty-state");
 const tableWrapper = document.querySelector("#request-table-wrapper");
 const tableBody = document.querySelector("#request-table-body");
+const priorityFilter = document.querySelector("#request-priority-filter");
 
 let requests = loadRequests();
+let selectedPriority = "All";
 
 neededByInput.min = new Date().toISOString().slice(0, 10);
 renderRequests();
+
+priorityFilter.addEventListener("change", () => {
+  selectedPriority = priorityFilter.value;
+  renderRequests();
+});
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -49,10 +58,14 @@ form.addEventListener("submit", (event) => {
 
 function renderRequests() {
   const hasRequests = requests.length > 0;
+  const visibleRequests = filterRequests(requests, selectedPriority);
+  const hasVisibleRequests = visibleRequests.length > 0;
+
   count.textContent = `${requests.length} ${requests.length === 1 ? "request" : "requests"}`;
   emptyState.hidden = hasRequests;
-  tableWrapper.hidden = !hasRequests;
-  tableBody.replaceChildren(...requests.map(createRequestRow));
+  filteredEmptyState.hidden = !hasRequests || hasVisibleRequests;
+  tableWrapper.hidden = !hasVisibleRequests;
+  tableBody.replaceChildren(...visibleRequests.map(createRequestRow));
 }
 
 function createRequestRow(request) {
