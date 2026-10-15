@@ -209,6 +209,22 @@ button:hover {
   font-weight: 800;
 }
 
+.list-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.list-filter label {
+  flex: 0 0 auto;
+}
+
+.list-filter select {
+  width: auto;
+  min-width: 10rem;
+}
+
 .empty-state {
   padding: 2.5rem 1rem;
   text-align: center;

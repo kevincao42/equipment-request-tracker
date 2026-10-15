@@ -55,6 +55,11 @@ export function appendRequest(requests, request) {
   return [request, ...requests];
 }
 
+export function filterRequests(requests, priority) {
+  if (priority === "All") return requests;
+  return requests.filter((request) => request.priority === priority);
+}
+
 export function loadRequests(storage = globalThis.localStorage) {
   if (!storage) return [];
 
@@ -83,8 +88,7 @@ function isRequestRecord(value) {
     typeof value.department === "string" &&
     typeof value.equipment === "string" &&
     typeof value.neededBy === "string" &&
-    (value.priority === undefined ||
-      (typeof value.priority === "string" && PRIORITIES.includes(value.priority))) &&
+    (value.priority === undefined || typeof value.priority === "string") &&
     typeof value.reason === "string" &&
     typeof value.createdAt === "string"
   );
