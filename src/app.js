@@ -1,5 +1,6 @@
 import {
   RequestValidationError,
+  RequestStorageError,
   appendRequest,
   createRequest,
   filterRequests,
@@ -37,8 +38,9 @@ form.addEventListener("submit", (event) => {
 
   try {
     const request = createRequest(input);
-    requests = appendRequest(requests, request);
-    saveRequests(requests);
+    const updatedRequests = appendRequest(requests, request);
+    saveRequests(updatedRequests);
+    requests = updatedRequests;
     form.reset();
     neededByInput.min = new Date().toISOString().slice(0, 10);
     setMessage("Request added.");
@@ -48,6 +50,12 @@ form.addEventListener("submit", (event) => {
     if (error instanceof RequestValidationError) {
       showFieldErrors(error.errors);
       setMessage("Complete all required fields.", true);
+      return;
+    }
+
+    if (error instanceof RequestStorageError) {
+      setMessage("Saved requests could not be read safely. Existing data was not changed.", true);
+      console.error(error);
       return;
     }
 

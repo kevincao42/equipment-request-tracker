@@ -9,6 +9,13 @@ export class RequestValidationError extends Error {
   }
 }
 
+export class RequestStorageError extends Error {
+  constructor() {
+    super("Stored requests could not be read safely; refusing to overwrite them.");
+    this.name = "RequestStorageError";
+  }
+}
+
 function clean(value) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -76,6 +83,22 @@ export function loadRequests(storage = globalThis.localStorage) {
 
 export function saveRequests(requests, storage = globalThis.localStorage) {
   if (!storage) return;
+
+  const stored = storage.getItem(STORAGE_KEY);
+  if (stored !== null) {
+    let parsed;
+
+    try {
+      parsed = JSON.parse(stored);
+    } catch {
+      throw new RequestStorageError();
+    }
+
+    if (!Array.isArray(parsed) || parsed.some((request) => !isRequestRecord(request))) {
+      throw new RequestStorageError();
+    }
+  }
+
   storage.setItem(STORAGE_KEY, JSON.stringify(requests));
 }
 
