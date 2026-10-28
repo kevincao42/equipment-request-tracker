@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  RequestStorageError,
   RequestValidationError,
   STORAGE_KEY,
   appendRequest,
@@ -131,9 +132,31 @@ test("loadRequests preserves records with missing or unrecognized priorities", (
   assert.deepEqual(loadRequests(storage), [legacyRequest, unrecognizedPriorityRequest]);
 });
 
-test("loadRequests safely handles damaged stored data", () => {
+test("saveRequests refuses to overwrite malformed stored JSON", () => {
   const storage = new MemoryStorage();
-  storage.setItem(STORAGE_KEY, "not-json");
+  const damagedData = "not-json";
+  storage.setItem(STORAGE_KEY, damagedData);
 
   assert.deepEqual(loadRequests(storage), []);
+  assert.throws(
+    () => saveRequests([createRequest(validInput)], storage),
+    RequestStorageError,
+  );
+  assert.equal(storage.getItem(STORAGE_KEY), damagedData);
+});
+
+test("saveRequests refuses to overwrite invalid records and preserves valid records", () => {
+  const storage = new MemoryStorage();
+  const validRequest = createRequest(validInput, { id: "request-valid" });
+  const invalidRequest = { ...validRequest, requester: null };
+  const storedRequests = [validRequest, invalidRequest];
+  const storedData = JSON.stringify(storedRequests);
+  storage.setItem(STORAGE_KEY, storedData);
+
+  assert.deepEqual(loadRequests(storage), [validRequest]);
+  assert.throws(
+    () => saveRequests([...loadRequests(storage), createRequest(validInput)], storage),
+    RequestStorageError,
+  );
+  assert.equal(storage.getItem(STORAGE_KEY), storedData);
 });
